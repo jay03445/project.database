@@ -1,49 +1,46 @@
-#!/usr/bin/env python3
-import sys
 import os
+import sys
+from typing import Dict, Optional
+
 
 DATA_FILE = "data.db"
 
 
 class KeyValueStore:
     """
-    Simple append-only, persistent key-value store.
-
-    - Uses data.db as an append-only log.
-    - In-memory index is a list of [key, value] pairs (no dicts).
-    - On startup, replays the log so the latest SET wins.
+    An append-only log-based key-value store with in-memory indexing.
+    Designed for persistence and high-speed command processing.
     """
 
-    def __init__(self):
-        # In-memory index: list of [key, value]
-        self.pairs = []
 
-        # Open the log file in append+read mode, create if it doesn't exist
-        self.log_file = open(DATA_FILE, "a+", encoding="utf-8")
-
-        # Rebuild in-memory index from the log
+    def __init__(self) -> None:
+        self.index: Dict[str, str] = {}
+        # Ensure the data file exists immediately
+        if not os.path.exists(DATA_FILE):
+            try:
+                with open(DATA_FILE, "w", encoding="utf-8") as f:
+                    pass
+            except OSError as e:
+                raise RuntimeError(f"Could not create database file: {e}")
+       
         self._replay_log()
 
-    def _replay_log(self):
-        """
-        Read the entire log from the beginning and rebuild the in-memory index.
-        """
-        # Go to the beginning of the file
-        self.log_file.seek(0)
 
-        for line in self.log_file:
-            line = line.strip()
-            if not line:
-                continue
+    def _replay_log(self) -> None:
+        """Reads the log file from start to finish to rebuild the index."""
+        try:
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                for line in f:
+                    clean_line = line.strip()
+                    if not clean_line:
+                        continue
+                   
+                    # Using maxsplit=2 to ensure values with spaces are preserved
+                    parts = clean_line.split(" ", 2)
+                    if len(parts) == 3 and parts[0] == "SET":
+                        self.index[parts[1]] = parts[2]
+        except FileNotFoundError:
+            pass
+        except OSError as e:
+            raise RuntimeError(f"Failed to replay log: {e}")
 
-            # Format: SET <key> <value>
-            parts = line.split(" ", 2)
-            if len(parts) < 3:
-                continue
-
-            cmd, key, value = parts[0], parts[1], parts[2]
-            if cmd == "SET":
-                self._set_in_memory(key, value)
-
-        # Move file pointer back to the end for future appends
-        self.log_file.seek(0, os.SEEK_END)
