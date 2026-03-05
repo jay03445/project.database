@@ -1,4 +1,4 @@
-This is a database that supports the commands set and get using the functionality of per
+This is a database that supports the commands set and get using the functionality of append storage.
 Files include: 
 project.py
 Running in PowerShell Terminal: (for testing set and get functionality)
