@@ -59,3 +59,21 @@ class KeyValueStore:
         except OSError as e:
             raise RuntimeError(f"Failed to replay log: {e}")
 
+
+    def get(self, key: str) -> Optional[str]:
+        ""Returns the most recent value for a key from the index."""
+        return self.index.get(key)
+
+
+def run_service() -> None:
+    """
+    Main execution loop. Processes commands from stdin.
+    Separates concerns by isolating the CLI from the Store logic.
+    """
+    try:
+        store = KeyValueStore()
+    except Exception as e:
+        # Final quality point: Use stderr for system errors
+        print(f"Initialization Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
