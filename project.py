@@ -82,3 +82,15 @@ def main() -> None:
             key = parts[1]
             value = parts[2]
             store.set(key, value)
+  elif cmd == "GET" and len(parts) >= 2:
+            key = parts[1]
+            value = store.get(key)
+
+            # Always print something
+            if value is None:
+                print("")
+            else:
+                print(value)
+
+        elif cmd == "EXIT":
+            break
